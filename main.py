@@ -2,6 +2,7 @@ import streamlit as st
 import yfinance as yf
 import pandas as pd
 import matplotlib.pyplot as plt
+from matplotlib import style
 import plotly.express as px
 from io import BytesIO
 
@@ -38,15 +39,32 @@ st.write(" это визуальное отображение изменения
 st.write("График котировок показывает, как цена менялась за последние дни, недели или месяцы. На графике по оси X откладывается время (дата, часы), а по оси Y — цена акции.")
 
 #берем колонки Date и Close_AAPL цена закрытия
-fig_apple = px.line(apple_data_new, x='Date', y='Close_AAPL', title='Цена закрытия AAPL')
-st.plotly_chart(fig_apple, use_container_width=True)
+
+plt.style.use('dark_background')
+fig, ax = plt.subplots(figsize=(10, 5))
+ax.plot(apple_data_new['Date'], apple_data_new['Close_AAPL'], color='#5C59C5', linewidth=2.5, label='Цена закрытия')
+ax.set_facecolor('#1e1e1e')
+fig.patch.set_facecolor('#1e1e1e')
+
+ax.set_title("Цена закрытия AAPL", fontsize=16, color='white', pad=15)
+ax.set_xlabel("Дата", fontsize=12, color='white')
+ax.set_ylabel("Цена $", fontsize=12, color='white')
+
+ax.tick_params(colors='white')
+ax.grid(True, linestyle='--', alpha=0.3)
+
+ax.legend(facecolor='#2e2e2e', edgecolor='white')
+
+
+st.pyplot(fig)
 
 # добавляем кнопку для скачивания графика в формате png
-img_bytes = fig_apple.to_image(format="png")
+buf = BytesIO()
+fig.savefig(buf, format="png", facecolor=fig.get_facecolor())
 st.sidebar.download_button(
-    label="Скачать график котировок Apple",
-    data=img_bytes,
-    file_name="apple_price.png",
+    label="Скачать график (PNG)",
+    data=buf.getvalue(),
+    file_name="apple_chart.png",
     mime="image/png"
 )
 
