@@ -18,9 +18,9 @@ st.sidebar.subheader("Данные Apple AAPL")
 period = st.sidebar.selectbox("Выберите период для данных Apple", options=["1mo", "3mo", "6mo", "1y", "2y", "5y"], index=3)
 interval = st.sidebar.selectbox("Интервал данных", options=["1d", "1wk", "1mo"], index=0)
 
-@st.cache_data
+@st.cache_data(ttl=3600)
 def apple_data(period, interval):
-    data = yf.download("AAPL", period=period, interval=interval)
+    data = yf.download("AAPL", period=period, interval=interval, threads=False)
     data.reset_index(inplace=True)
     #проверяем, есть ли MultiIndex по столбцам сброс
     if isinstance(data.columns, pd.MultiIndex):
