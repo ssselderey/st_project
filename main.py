@@ -18,7 +18,7 @@ st.sidebar.subheader("Данные Apple AAPL")
 period = st.sidebar.selectbox("Выберите период для данных Apple", options=["1mo", "3mo", "6mo", "1y", "2y", "5y"], index=3)
 interval = st.sidebar.selectbox("Интервал данных", options=["1d", "1wk", "1mo"], index=0)
 
-@st.cache_data(ttl=3600)
+@st.cache_data()
 def apple_data(period, interval):
     data = yf.download("AAPL", period=period, interval=interval, threads=False)
     data.reset_index(inplace=True)
@@ -34,29 +34,31 @@ st.write("Данные Apple", apple_data_new.tail())
 st.write("Колонки apple_data:", apple_data_new.columns.tolist())
 
 # визуал графиков и пояснения
-st.subheader("График котировок Apple - ")
+st.subheader("График котировок Apple")
 st.write(" это визуальное отображение изменения цены акций компании Apple (AAPL) на фондовом рынке за определённый период времени.")
-st.write("График котировок показывает, как цена менялась за последние дни, недели или месяцы. На графике по оси X откладывается время (дата, часы), а по оси Y — цена акции.")
+st.write("""
+График котировок отображает изменение цены акций Apple (AAPL) на фондовом рынке.
+По оси X — дата, по оси Y — цена закрытия.
+""")
 
 #берем колонки Date и Close_AAPL цена закрытия
 
 plt.style.use('dark_background')
 fig, ax = plt.subplots(figsize=(10, 5))
 ax.plot(apple_data_new['Date'], apple_data_new['Close_AAPL'], color='#5C59C5', linewidth=2.5, label='Цена закрытия')
+
 ax.set_facecolor('#1e1e1e')
 fig.patch.set_facecolor('#1e1e1e')
-
 ax.set_title("Цена закрытия AAPL", fontsize=16, color='white', pad=15)
 ax.set_xlabel("Дата", fontsize=12, color='white')
 ax.set_ylabel("Цена $", fontsize=12, color='white')
-
 ax.tick_params(colors='white')
 ax.grid(True, linestyle='--', alpha=0.3)
-
 ax.legend(facecolor='#2e2e2e', edgecolor='white')
 
 
 st.pyplot(fig)
+
 
 # добавляем кнопку для скачивания графика в формате png
 buf = BytesIO()
@@ -68,29 +70,35 @@ st.sidebar.download_button(
     mime="image/png"
 )
 
+plt.close(fig)
+
 # загружаем tips.csv
 st.sidebar.subheader("Загрузка вашего CSV (tips.csv)")
 uploaded_file = st.sidebar.file_uploader("Загрузите CSV файл", type=['csv'])
 
 if uploaded_file is not None:
     tips_df = pd.read_csv(uploaded_file)
-    st.write("Данные из загруженного CSV файла:", tips_df.head())
-    st.subheader("График чаевых vs счета")
 
-    # проверяем колонки
-    if {'total_bill', 'tip'}.issubset(tips_df.columns):
-        fig_tips = px.scatter(tips_df, x='total_bill', y='tip', color='sex', color_discrete_map={'Male': "#5649E0", 'Female': "#df4ac6"}, title='Чаевые в зависимости от счета')
+    st.subheader("Данные по чаевым")
+    st.dataframe(tips_df.head(), use_container_width=True)
+
+    if {'total_bill', 'tip', 'sex'}.issubset(tips_df.columns):
+        st.subheader("График: Чаевые vs Счёт")
+
+        fig_tips = px.scatter(
+            tips_df,
+            x='total_bill',
+            y='tip',
+            color='sex',
+            title='Чаевые в зависимости от счёта',
+            color_discrete_map={'Male': "#5649E0", 'Female': "#df4ac6"},
+            template='plotly_dark'
+        )
+
         st.plotly_chart(fig_tips, use_container_width=True)
 
-        # создаем кнопку для скачивания графика
-        img_tips_bytes = fig_tips.to_image(format="png")
-        st.sidebar.download_button(
-            label="Скачать график чаевых",
-            data=img_tips_bytes,
-            file_name="tips_scatter.png",
-            mime="image/png"
-        )
+        st.sidebar.info("График Plotly не сохраняется как PNG из-за ограничений среды.\n\nМожно сохранить как изображение вручную (иконка в правом верхнем углу графика).")
     else:
-        st.warning("В загруженном файле отсутствуют колонки 'total_bill' и 'tip' для визуализации.")
+        st.warning("В файле должны быть колонки 'total_bill', 'tip' и 'sex'.")
 else:
-    st.info("Загрузите CSV-файл с данными чаевых, чтобы увидеть графики.")
+    st.info("Загрузите CSV-файл с чаевыми для визуализации.")
